@@ -206,7 +206,7 @@ class TableCreator {
 
         $query = "create table if not exists interop2.public.game(
         gameid integer not null primary key,
-        title varchar(30) not null,
+        title varchar(256) not null,
         releasedate date not null,
         funfactor integer not null
             constraint funfactor_positive check (0 < funfactor),
@@ -216,7 +216,8 @@ class TableCreator {
             constraint sellprice_positive check (0 < sellprice),
         minimumage integer not null
             constraint minimumage_positive check (0 < minimumage),
-        genre varchar(30) not null
+        genre varchar(256) not null,
+        requirements xml not null
                    )";
         $result = pg_query($db_connection, $query);
         if(!$result) {

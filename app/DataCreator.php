@@ -75,28 +75,87 @@ class DataCreator
         return $aryRange;
     }
 
-    public function create($db_connection) {
+    public function parse_csv ($csv_string, $delimiter = ",", $skip_empty_lines = true, $trim_fields = true) : array {
+        //Source
+        // https://www.php.net/manual/de/function.str-getcsv.php
+        $enc = preg_replace('/(?<!")""/', '!!Q!!', $csv_string);
+        $enc = preg_replace_callback(
+            '/"(.*?)"/s',
+            function ($field) {
+                return urlencode(utf8_encode($field[1]));
+            },
+            $enc
+        );
+        $lines = preg_split($skip_empty_lines ? ($trim_fields ? '/( *\R)+/s' : '/\R+/s') : '/\R/s', $enc);
+        return array_map(
+            function ($line) use ($delimiter, $trim_fields) {
+                $fields = $trim_fields ? array_map('trim', explode($delimiter, $line)) : explode($delimiter, $line);
+                return array_map(
+                    function ($field) {
+                        return str_replace('!!Q!!', '"', utf8_decode(urldecode($field)));
+                    },
+                    $fields
+                );
+            },
+            $lines
+        );
+    }
 
+    public function create($db_connection) {
+        // CSV Source:
+        // https://corgis-edu.github.io/corgis/csv/video_games/
+        // https://github.com/hadley/data-baby-names/blob/master/baby-names.csv
+        $humanNames = file_get_contents('./app/names.csv');
+        $gameTitles = file_get_contents('./app/video_games.csv');
+        $humanNames = $this->parse_csv($csv_string=$humanNames, $delimiter=',');
+        $gameTitles = $this->parse_csv($csv_string=$gameTitles, $delimiter=',');
+        //echo(count($gameTitles));
+        //echo($gameTitles[1][0]);
         $numRows = 777;
 
         for ($x = 0; $x < $numRows; $x++) {
             $age = rand(15 , 35);
             $sexChoice = rand(15 , 35);
-            $coronatest = "<address> <-- level 1-->
-              <name>
-                <given_name>Chuck</given_name>
-                <family_name>Norris</family_name>
-              </name>
-              <address zip=\"1190\" country=\"AT\">
-                <street> <-- level 3-->
-                  <name>Waehringerstrasse</name>  <-- level 4-->
-                  <number type=\"main\">29</number>
-                  <number type=\"internal\">4</number>
-                  <number type=\"internal\">4.49</number>
-                </street>
-                <city>Vienna</city>
-              </address>
-            </address>";
+
+            $hastest = (bool)rand(0,1);
+            $hospital = "NA";
+            $result = (bool)rand(0,1);
+            $drlastname = "NA";
+            if ($hastest){
+                $hastest = "True";
+                if($result){
+                    $result = "True";
+                } else {
+                    $result = "False";
+                }
+                $hospital = rand(0, count($humanNames));
+                $drlastname = rand(0, count($humanNames));
+                $hospital = $humanNames[$hospital][1]."-Hospital";
+                $drlastname = "Dr.".$humanNames[$drlastname][1];
+            } else {
+                $hastest = "False";
+                $drlastname = "NA";
+                $result = "NA";
+                $hastest = "False";
+            }
+
+            $coronatest =
+            "<coronatest>
+              <overview access=\"public\">
+                <hasttest access=\"public\" type=\"bool\">{$hastest}</hasttest>
+                <result access=\"public\" test=\"positive\" type=\"bool\">{$result}</result>
+              </overview>
+              <specifics access=\"private\">
+                <tester access=\"private\">
+                  <hospital access=\"private\" type=\"string\">{$hospital}</hospital>
+                  <date access=\"private\" type=\"date\">2020-02-02</date>
+                  <drlastname access=\"private\" type=\"string\">{$drlastname}</drlastname>
+                </tester>
+                <test access=\"private\">
+                    <testtype access=\"private\">Quicktest</testtype>
+                </test>
+              </specifics>
+            </coronatest>";
 
             if ($age%$sexChoice < 35-15){
                 $query = "insert into interop2.public.person(personid, age, sex, coronatest)
@@ -104,7 +163,7 @@ class DataCreator
                 on conflict (personid) do nothing";
             } else {
                 $query = "insert into interop2.public.person(personid, age, sex, coronatest)
-                values($x, $age, '$coronatest')
+                values($x, $age, 'f','$coronatest')
                 on conflict (personid) do nothing";
             }
 
@@ -118,9 +177,14 @@ class DataCreator
 
         for ($x = 0; $x < $numRows; $x++) {
 
-            $firstName = DataCreator::generateRandomString(10);
-            $middleName = DataCreator::generateRandomString(10);
-            $lastName = DataCreator::generateRandomString(10);
+            $fname = rand(0, count($humanNames));
+            $mname = rand(0, count($humanNames));
+            $lname = rand(0, count($humanNames));
+            if($x+3<count($humanNames)){
+                $firstName = $humanNames[$fname][1];
+                $middleName = $humanNames[$mname][1];
+                $lastName =  $humanNames[$lname][1];
+            }
 
             $query = "insert into interop2.public.personname(personid, firstname, middlename, lastname)
             values($x, '$firstName', '$middleName', '$lastName')
@@ -156,8 +220,12 @@ class DataCreator
 
 
         for ($x = 0; $x < $numRows; $x++) {
-            $city = DataCreator::generateRandomString(10);
-            $street = DataCreator::generateRandomString(10);
+
+            $city = rand(0, count($humanNames));
+            $street = rand(0, count($humanNames));
+            $city = $humanNames[$city][1]."-Town";
+            $street = $humanNames[$street][1].-"Street";
+
             $number = rand(1, 100);
             $door =  rand(1,100);
 
@@ -282,8 +350,12 @@ class DataCreator
 
 
         for ($x = 0; $x < $numRows; $x++) {
-            $city = DataCreator::generateRandomString(10);
-            $street = DataCreator::generateRandomString(10);
+
+            $city = rand(0, count($humanNames));
+            $street = rand(0, count($humanNames));
+            $city = $humanNames[$city][1]."-Town";
+            $street = $humanNames[$street][1].-"Street";
+
             $number = rand(1, 100);
             $door =  rand(1,100);
 
@@ -301,9 +373,10 @@ class DataCreator
 
 
 
-
+        $specialchars = array(":", "'");
         for ($x = 0; $x < $numRows; $x++) {
             $title = DataCreator::generateRandomString(10);
+
             $release = DataCreator::generateRandomDate('1999-02-1', '2019-02-1');
             $funfactor = rand(1, 10);
             $minage = rand(16, 18);
@@ -311,8 +384,50 @@ class DataCreator
             $sellprice = $this->generateRandomFloat(10.0, 200.0);
             $genre = DataCreator::generateRandomString(10);
 
-            $query = "insert into interop2.public.game(gameid, title, releasedate, funfactor, multiplayer, sellprice, minimumage, genre)
-            values($x, '$title', '$release', $funfactor, $multiplayer, $sellprice, $minage, '$genre')
+            if($x<count($gameTitles)){
+                $title = $gameTitles[$x][0];
+                $title = str_replace ($specialchars , " " , $title );
+
+                $genre = explode(",", $gameTitles[$x][5])[0];
+                $genre = explode("/", $genre)[0];
+            }
+
+            $version = rand(7,10);
+            $tflops = $this->generateRandomFloat(10.0, 200.0);
+            $intelmodel = rand(3,7);
+            $cores = rand(1,16);
+            $ghz = $this->generateRandomFloat(1.0, 4.0);
+            $diskspace = $this->generateRandomFloat(1.0, 4.0);
+            $memspace = $this->generateRandomFloat(1.0, 32.0);
+            $requirements =
+            "<requirements>
+              <software access=\"public\">
+                <operatingsystem access=\"public\" type=\"string\">Windows</operatingsystem>
+                <version access=\"public\" type=\"integer\">{$version}</version>
+              </software>
+              <hardware access=\"public\">
+                <graphicscard access=\"public\">
+                  <vendor access=\"public\" type=\"string\">Nvidia</vendor>
+                  <model access=\"public\" type=\"date\">Tesla</model>
+                  <tflops access=\"public\" type=\"float\">{$tflops}</tflops>
+                </graphicscard>
+                <cpu access=\"public\">
+                  <vendor access=\"public\" type=\"string\">Intel</vendor>
+                  <model access=\"public\" type=\"string\">i{$intelmodel}</model>
+                  <cores access=\"public\" type=\"integer\">{$cores}</cores>
+                  <ghz access=\"public\" type=\"float\">{$ghz}</ghz>
+                </cpu>
+                <persitentstorage access=\"public\">
+                    <gb access=\"public\" type=\"float\">{$diskspace}</gb>
+                </persitentstorage>
+                <memory access=\"public\">
+                    <gb access=\"public\" type=\"float\">{$memspace}</gb>
+                </memory>
+              </hardware>
+            </requirements>";
+
+            $query = "insert into interop2.public.game(gameid, title, releasedate, funfactor, multiplayer, sellprice, minimumage, genre, requirements)
+            values($x, '$title', '$release', $funfactor, $multiplayer, $sellprice, $minage, '$genre', '$requirements')
             on conflict (gameid) do nothing";
 
             $result = pg_query($db_connection, $query);
@@ -361,7 +476,7 @@ class DataCreator
         echo "Content for table buysfrom created successfully<br>";
 
 
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             for ($x = 0; $x < $numRows; $x++) {
                 $game = rand(0, 776);
                 $query = "insert into interop2.public.owns(gameid, hostid)
@@ -377,7 +492,7 @@ class DataCreator
         echo "Content for table owns created successfully<br>";
 
 
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             for ($x = 0; $x < $numRows; $x++) {
                 $game = rand(0, 776);
                 $query = "insert into interop2.public.wants(gameid, friendid)

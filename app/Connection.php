@@ -27,7 +27,7 @@ class Connection {
         }
 
         // connect to the postgresql database
-        $conStr = sprintf("host=%s port=%s dbname=%s user=%s password=%s connect_timeout=5",
+        $conStr = sprintf("host=%s port=%s dbname=%s user=%s password=%s connect_timeout=60",
             $params['host'],
             $params['port'],
             $params['database'],
