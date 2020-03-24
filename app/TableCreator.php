@@ -23,7 +23,8 @@ class TableCreator {
         $query = "create table if not exists interop2.public.person(
         personid integer not null primary key,
         age integer not null,
-        sex varchar(6) not null
+        sex varchar(6) not null,
+        coronatest xml not null
                    )";
         $result = pg_query($db_connection, $query);
         if(!$result) {

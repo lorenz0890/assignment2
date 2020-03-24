@@ -82,13 +82,29 @@ class DataCreator
         for ($x = 0; $x < $numRows; $x++) {
             $age = rand(15 , 35);
             $sexChoice = rand(15 , 35);
+            $coronatest = "<address> <-- level 1-->
+              <name>
+                <given_name>Chuck</given_name>
+                <family_name>Norris</family_name>
+              </name>
+              <address zip=\"1190\" country=\"AT\">
+                <street> <-- level 3-->
+                  <name>Waehringerstrasse</name>  <-- level 4-->
+                  <number type=\"main\">29</number>
+                  <number type=\"internal\">4</number>
+                  <number type=\"internal\">4.49</number>
+                </street>
+                <city>Vienna</city>
+              </address>
+            </address>";
+
             if ($age%$sexChoice < 35-15){
-                $query = "insert into interop2.public.person(personid, age, sex)
-                values($x, $age, 'm')
+                $query = "insert into interop2.public.person(personid, age, sex, coronatest)
+                values($x, $age, 'm', '$coronatest')
                 on conflict (personid) do nothing";
             } else {
-                $query = "insert into interop2.public.person(personid, age, sex)
-                values($x, $age, 'w')
+                $query = "insert into interop2.public.person(personid, age, sex, coronatest)
+                values($x, $age, '$coronatest')
                 on conflict (personid) do nothing";
             }
 
@@ -305,6 +321,76 @@ class DataCreator
             }
         }
         echo "Content for table game created successfully<br>";
+
+
+
+
+
+
+        for ($i = 0; $i < 10; $i++){
+            for ($x = 0; $x < $numRows; $x++) {
+                $wantedate = DataCreator::generateRandomDate('2020-4-30', '2020-5-30');
+
+                $query = "insert into interop2.public.hastime(personid, date)
+            values($x, '$wantedate')
+            on conflict (personid, date) do nothing";
+
+                $result = pg_query($db_connection, $query);
+                if (!$result) {
+                    echo pg_last_error($db_connection);
+                }
+            }
+        }
+        echo "Content for table hastime created successfully<br>";
+
+
+
+        for ($i = 0; $i < 3; $i++) {
+            for ($x = 0; $x < $numRows; $x++) {
+                $smarket = rand(0, 776);
+                $query = "insert into interop2.public.buysfrom(supermarketid, hostid)
+                values($smarket, $x)
+                on conflict (supermarketid, hostid) do nothing";
+
+                $result = pg_query($db_connection, $query);
+                if (!$result) {
+                    echo pg_last_error($db_connection);
+                }
+            }
+        }
+        echo "Content for table buysfrom created successfully<br>";
+
+
+        for ($i = 0; $i < 3; $i++) {
+            for ($x = 0; $x < $numRows; $x++) {
+                $game = rand(0, 776);
+                $query = "insert into interop2.public.owns(gameid, hostid)
+                values($game, $x)
+                on conflict (gameid, hostid) do nothing";
+
+                $result = pg_query($db_connection, $query);
+                if (!$result) {
+                    echo pg_last_error($db_connection);
+                }
+            }
+        }
+        echo "Content for table owns created successfully<br>";
+
+
+        for ($i = 0; $i < 3; $i++) {
+            for ($x = 0; $x < $numRows; $x++) {
+                $game = rand(0, 776);
+                $query = "insert into interop2.public.wants(gameid, friendid)
+                values($game, $x)
+                on conflict (gameid, friendid) do nothing";
+
+                $result = pg_query($db_connection, $query);
+                if (!$result) {
+                    echo pg_last_error($db_connection);
+                }
+            }
+        }
+        echo "Content for table wants created successfully<br>";
 
         return;
     }
