@@ -268,7 +268,7 @@ class TableCreator {
     }
 
     /**
-     * return an instance of the Connection object
+     * return an instance of the tablecreator object
      * @return type
      */
     public static function get() {

@@ -19,7 +19,7 @@ class DataCreator
      */
     public function generateRandomString($length = 10) : string {
         // Source
-        //https://stackoverflow.com/questions/4356289/php-random-string-generator
+        // https://stackoverflow.com/questions/4356289/php-random-string-generator
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);
         $randomString = '';
@@ -30,10 +30,51 @@ class DataCreator
     }
 
     public function generateRandomFloat($min, $max) : float {
-        //Source
+        // Source
         // https://stackoverflow.com/questions/14155603/random-float-number-between-0-and-1-0-php
         return rand($min, $max - 1) + (rand(0, PHP_INT_MAX - 1) / PHP_INT_MAX );
     }
+
+    function generateRandomDate($sStartDate, $sEndDate, $sFormat = 'Y-m-d H:i:s')
+    {   //Source:
+        // https://gist.github.com/samcrosoft/6550473
+        // Convert the supplied date to timestamp
+        $fMin = strtotime($sStartDate);
+        $fMax = strtotime($sEndDate);
+
+        // Generate a random number from the start and end dates
+        $fVal = mt_rand($fMin, $fMax);
+
+        // Convert back to the specified date format
+        return date($sFormat, $fVal);
+    }
+
+    function generateDateRangeArray($strDateFrom,$strDateTo) : array {
+        // Source
+        // https://stackoverflow.com/questions/4312439/php-return-all-dates-between-two-dates-in-an-array
+        // takes two dates formatted as YYYY-MM-DD and creates an
+        // inclusive array of the dates between the from and to dates.
+
+        // could test validity of dates here but I'm already doing
+        // that in the main script
+
+        $aryRange=array();
+
+        $iDateFrom=mktime(1,0,0,substr($strDateFrom,5,2),     substr($strDateFrom,8,2),substr($strDateFrom,0,4));
+        $iDateTo=mktime(1,0,0,substr($strDateTo,5,2),     substr($strDateTo,8,2),substr($strDateTo,0,4));
+
+        if ($iDateTo>=$iDateFrom)
+        {
+            array_push($aryRange,date('Y-m-d',$iDateFrom)); // first entry
+            while ($iDateFrom<$iDateTo)
+            {
+                $iDateFrom+=86400; // add 24 hours
+                array_push($aryRange,date('Y-m-d',$iDateFrom));
+            }
+        }
+        return $aryRange;
+    }
+
     public function create($db_connection) {
 
         $numRows = 777;
@@ -116,11 +157,160 @@ class DataCreator
         echo "Content for table hostaddress created successfully<br>";
 
 
+
+        for ($x = 0; $x < $numRows; $x++) {
+            $inviteid = rand(350, 375);
+            $wantedbeers =  rand(1,20);
+            $friendsscience = DataCreator::generateRandomDate('1995-02-1', '2020-02-1');
+            $importance =  rand(1,10);
+            $christian = (bool)rand(0,1);
+            $jewish = (bool)rand(0,1);
+            $islamic = (bool)rand(0,1);
+
+            if($christian){
+                $query = "insert into interop2.public.friend(friendid, invitinghostid, wantedbeers, friendscince, friendimportance, christian, jewish, islamic)
+                values($x, $inviteid, $wantedbeers, '$friendsscience', $importance, true, false, false)
+                on conflict (friendid) do nothing";
+            } else if ($islamic) {
+                $query = "insert into interop2.public.friend(friendid, invitinghostid, wantedbeers, friendscince, friendimportance, christian, jewish, islamic)
+                values($x, $inviteid, $wantedbeers, '$friendsscience', $importance, false, true, false)
+                on conflict (friendid) do nothing";
+            } else if ($jewish){
+                $query = "insert into interop2.public.friend(friendid, invitinghostid, wantedbeers, friendscince, friendimportance, christian, jewish, islamic)
+                values($x, $inviteid, $wantedbeers, '$friendsscience', $importance, false, false, true)
+                on conflict (friendid) do nothing";
+            } else {
+                $query = "insert into interop2.public.friend(friendid, invitinghostid, wantedbeers, friendscince, friendimportance, christian, jewish, islamic)
+                values($x, $inviteid, $wantedbeers, '$friendsscience', $importance, false, false, false)
+                on conflict (friendid) do nothing";
+            }
+
+            $result = pg_query($db_connection, $query);
+            if (!$result) {
+                echo pg_last_error($db_connection);
+            }
+        }
+        echo "Content for table friend created successfully<br>";
+
+
+
+        $daterange = DataCreator::generateDateRangeArray('2020-4-30','2024-01-01');
+        for ($x = 0; $x < $numRows; $x++) {
+
+            $pdate = $daterange[$x];
+            $christian = (bool)rand(0,1);
+            $jewish = (bool)rand(0,1);
+            $islamic = (bool)rand(0,1);
+            $weekend = (bool)rand(0,1);
+            $national = (bool)rand(0,1);
+
+            $query = "insert into interop2.public.partydate(date, christianholyday, jewishholyday, islamicholyday, nationalholyday, weekend)
+            values('$pdate', %c%, %j%, %i%, %n%, %w%)
+            on conflict (date) do nothing";
+
+            if($christian){
+                $query = str_replace("%c%", "true", $query);
+                $query = str_replace("%j%", "false", $query);
+                $query = str_replace("%i%", "false", $query);
+            } else if($islamic) {
+                $query = str_replace("%c%", "false", $query);
+                $query = str_replace("%j%", "false", $query);
+                $query = str_replace("%i%", "true", $query);
+            } else if ($jewish) {
+                $query = str_replace("%c%", "false", $query);
+                $query = str_replace("%j%", "true", $query);
+                $query = str_replace("%i%", "false", $query);
+            } else {
+                $query = str_replace("%c%", "false", $query);
+                $query = str_replace("%j%", "false", $query);
+                $query = str_replace("%i%", "false", $query);
+            }
+            if ($weekend) {
+                $query = str_replace("%w%", "true", $query);
+            } else {
+                $query = str_replace("%w%", "false", $query);
+            }
+            if ($national) {
+                $query = str_replace("%n%", "true", $query);
+            } else {
+                $query = str_replace("%n%", "false", $query);
+            }
+
+            $result = pg_query($db_connection, $query);
+            if (!$result) {
+                echo pg_last_error($db_connection);
+            }
+        }
+        echo "Content for table partydate created successfully<br>";
+
+
+
+        for ($x = 0; $x < $numRows; $x++) {
+            $availablebeer = rand(1,100000);
+            $beerprice = $this->generateRandomFloat(1, 3);
+            $name = $this->generateRandomString(15);
+            $query = "insert into interop2.public.supermarket(supermarketid, availablebeer, beeprice, name)
+            values($x, $availablebeer, $beerprice, '$name')
+            on conflict (supermarketid) do nothing";
+
+            $result = pg_query($db_connection, $query);
+            if (!$result) {
+                echo pg_last_error($db_connection);
+            }
+        }
+        echo "Content for table supermarket created successfully<br>";
+
+
+
+
+
+
+        for ($x = 0; $x < $numRows; $x++) {
+            $city = DataCreator::generateRandomString(10);
+            $street = DataCreator::generateRandomString(10);
+            $number = rand(1, 100);
+            $door =  rand(1,100);
+
+            $query = "insert into interop2.public.supermarketaddress(supermarketid, cityname, street, number, door)
+            values($x, '$city', '$street', $number, $door)
+            on conflict (supermarketid) do nothing";
+
+            $result = pg_query($db_connection, $query);
+            if (!$result) {
+                echo pg_last_error($db_connection);
+            }
+        }
+        echo "Content for table supermarketadress created successfully<br>";
+
+
+
+
+
+        for ($x = 0; $x < $numRows; $x++) {
+            $title = DataCreator::generateRandomString(10);
+            $release = DataCreator::generateRandomDate('1999-02-1', '2019-02-1');
+            $funfactor = rand(1, 10);
+            $minage = rand(16, 18);
+            $multiplayer =  rand(1,128);
+            $sellprice = $this->generateRandomFloat(10.0, 200.0);
+            $genre = DataCreator::generateRandomString(10);
+
+            $query = "insert into interop2.public.game(gameid, title, releasedate, funfactor, multiplayer, sellprice, minimumage, genre)
+            values($x, '$title', '$release', $funfactor, $multiplayer, $sellprice, $minage, '$genre')
+            on conflict (gameid) do nothing";
+
+            $result = pg_query($db_connection, $query);
+            if (!$result) {
+                echo pg_last_error($db_connection);
+            }
+        }
+        echo "Content for table game created successfully<br>";
+
         return;
     }
 
     /**
-     * return an instance of the Connection object
+     * return an instance of the datcreator object
      * @return type
      */
     public static function get() {
