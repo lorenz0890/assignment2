@@ -223,8 +223,8 @@ class DataCreator
 
             $city = rand(0, count($humanNames));
             $street = rand(0, count($humanNames));
-            $city = $humanNames[$city][1]."-Town";
-            $street = $humanNames[$street][1].-"Street";
+            $city = "{$humanNames[$city][1]}-Town";
+            $street = "{$humanNames[$street][1]}-Street";
 
             $number = rand(1, 100);
             $door =  rand(1,100);
@@ -353,8 +353,8 @@ class DataCreator
 
             $city = rand(0, count($humanNames));
             $street = rand(0, count($humanNames));
-            $city = $humanNames[$city][1]."-Town";
-            $street = $humanNames[$street][1].-"Street";
+            $city = "{$humanNames[$city][1]}-Town";
+            $street = "{$humanNames[$street][1]}-Street";
 
             $number = rand(1, 100);
             $door =  rand(1,100);
